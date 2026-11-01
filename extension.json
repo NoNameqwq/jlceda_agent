@@ -1,0 +1,195 @@
+{
+	"name": "jlc-eda-agent",
+	"uuid": "7bc1985683024c9ab16e8c65e1117e4c",
+	"displayName": "EDA Agent 智能助手",
+	"description": "嘉立创EDA专业版内置 AI Agent：工程 Agent 与独立 Agent、多会话、工具调用、权限审批、改动追踪与撤销，支持 DeepSeek 与任意 OpenAI 兼容接口",
+	"version": "1.1.0",
+	"publisher": "EDA Agent",
+	"engines": {
+		"eda": "^3.2.0"
+	},
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "extension-store",
+		"url": ""
+	},
+	"categories": [
+		"Schematic",
+		"PCB",
+		"Other"
+	],
+	"keywords": [
+		"AI",
+		"Agent",
+		"DeepSeek",
+		"Assistant"
+	],
+	"images": {
+		"logo": "./images/logo.png"
+	},
+	"homepage": "",
+	"bugs": "",
+	"activationEvents": {},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"home": [
+			{
+				"id": "jlcAgentHome",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentHomeToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentHomeGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentHomeAbout",
+						"title": "关于...",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"blank": [
+			{
+				"id": "jlcAgentBlank",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentBlankToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentBlankProject",
+						"title": "工程 Agent",
+						"registerFn": "openProjectAgent"
+					},
+					{
+						"id": "jlcAgentBlankGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					}
+				]
+			}
+		],
+		"sch": [
+			{
+				"id": "jlcAgentSch",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentSchToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentSchProject",
+						"title": "工程 Agent",
+						"registerFn": "openProjectAgent"
+					},
+					{
+						"id": "jlcAgentSchGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentSchFloat",
+						"title": "以浮动窗口打开",
+						"registerFn": "openFloatingWindow"
+					},
+					{
+						"id": "jlcAgentSchDock",
+						"title": "停靠到右侧面板",
+						"registerFn": "openDockedPanel"
+					},
+					{
+						"id": "jlcAgentSchAbout",
+						"title": "关于...",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"symbol": [
+			{
+				"id": "jlcAgentSym",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentSymToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentSymGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					}
+				]
+			}
+		],
+		"pcb": [
+			{
+				"id": "jlcAgentPcb",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentPcbToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentPcbProject",
+						"title": "工程 Agent",
+						"registerFn": "openProjectAgent"
+					},
+					{
+						"id": "jlcAgentPcbGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentPcbFloat",
+						"title": "以浮动窗口打开",
+						"registerFn": "openFloatingWindow"
+					},
+					{
+						"id": "jlcAgentPcbDock",
+						"title": "停靠到右侧面板",
+						"registerFn": "openDockedPanel"
+					},
+					{
+						"id": "jlcAgentPcbAbout",
+						"title": "关于...",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"footprint": [
+			{
+				"id": "jlcAgentFp",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentFpToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentFpGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					}
+				]
+			}
+		]
+	}
+}

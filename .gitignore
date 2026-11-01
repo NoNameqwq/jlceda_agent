@@ -1,0 +1,11 @@
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/settings.json
+/coverage/
+/dist/
+/node_modules/
+/.eslintcache
+debug.log
+/.ui-out/
+# 构建产物：iframe/index.html 由 npm run build 从 ui/ 生成
+/iframe/index.html
