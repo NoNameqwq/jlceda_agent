@@ -20,3 +20,5 @@ debug.log
 /.sdk-manifest.json
 /.edaignore
 /.ui-out/
+/wasm/lceda-pro-sim-server.js
+/shared/

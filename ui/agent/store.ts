@@ -30,6 +30,7 @@ export function defaultSettings(): Settings {
 		scope: 'project',
 		autoOpenOnProject: true,
 		showReasoning: true,
+		simEngineMode: 'takeover',
 		customInstructions: '',
 		sendKey: 'enter',
 	};

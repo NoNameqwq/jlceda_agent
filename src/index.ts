@@ -6,6 +6,7 @@
  * Agent 的全部逻辑（对话、工具、模型请求）运行在 /iframe/index.html 内。
  */
 import extensionConfig from '../extension.json' with { type: 'json' };
+import { initSimulation } from './sim/live';
 
 const PANEL_ID = 'jlc-agent-sidebar';
 const HTML_PATH = '/iframe/index.html';
@@ -263,6 +264,12 @@ async function checkProject(): Promise<void> {
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 export function activate(status?: 'onStartupFinished', arg?: string): void {
+	try {
+		initSimulation();
+	}
+	catch (e) {
+		console.warn('[EDA Agent] 仿真模块初始化失败', e);
+	}
 	try {
 		eda.sys_MessageBus.subscribe(TOPIC_VISIBILITY, (message: unknown) => {
 			visible = !!(message as { visible?: boolean })?.visible;

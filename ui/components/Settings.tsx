@@ -426,6 +426,17 @@ function GeneralTab(props: { ws: Workspace }) {
 					]}
 				/>
 			</Field>
+			<Field label="SimulIDE 仿真引擎" hint="接管：由本扩展运行仿真，支持 Agent 自建元件；若同时安装了官方 SimulIDE 扩展，请在扩展管理器中停用它，避免两个引擎同时响应。仅观察：只记录网表供 Agent 分析。修改后需重启 EDA 生效">
+				<Select
+					value={st.simEngineMode}
+					onChange={v => ws.updateSettings({ simEngineMode: v })}
+					options={[
+						{ value: 'takeover', label: '接管仿真', desc: '本扩展运行引擎，支持自定义元件' },
+						{ value: 'observe', label: '仅观察', desc: '官方扩展运行仿真，本扩展只读取网表' },
+						{ value: 'off', label: '关闭', desc: '不参与仿真' },
+					]}
+				/>
+			</Field>
 			<Toggle label="显示思考过程" desc="推理模型的思考内容以折叠块显示" checked={st.showReasoning} onChange={v => ws.updateSettings({ showReasoning: v })} />
 			<Field label="自定义指令" hint="附加到系统提示词末尾，例如：器件优先 0603 封装；网络命名使用大写">
 				<textarea class="input" rows={4} value={st.customInstructions} onInput={e => ws.updateSettings({ customInstructions: (e.target as HTMLTextAreaElement).value })} />

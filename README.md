@@ -23,7 +23,17 @@
 - 改动面板：查看每处改动的前后差异，逐项或全部撤销。
 - 图片、文件、画布截图输入；Markdown、LaTeX、代码高亮、HTML 电路图渲染。
 - 明暗主题，Ctrl + 滚轮缩放界面。
+- SimulIDE 动态仿真：内置引擎接管仿真会话，Agent 可读取探针数值、控制仿真、离线验证，并能新建自定义仿真元件（如 74HC30）并自动跑真值表。
+
+## SimulIDE 仿真
+
+本扩展内置 SimulIDE WebAssembly 引擎（来自 [eext-simulation-with-simulide](https://github.com/easyeda/eext-simulation-with-simulide)）。
+
+- 设置 → 通用 →「SimulIDE 仿真引擎」：**接管**（默认，由本扩展运行仿真，支持自定义元件）/ 仅观察 / 关闭。
+- 选「接管」时请在扩展管理器中**停用官方 SimulIDE 扩展**，避免两个引擎同时响应。
+- 自定义元件：Agent 用门级描述或 .sim1 子电路创建元件并测试；在图中放置同引脚数的外壳芯片（如 74HC00）并绑定位号，运行仿真时自动替换。
 
 ## 开源许可
 
-Apache License 2.0
+由于打包了 SimulIDE 引擎，本扩展整体以 **GNU AGPL v3（或更高版本）** 发布，见 LICENSE。
+SimulIDE 原始代码版权归 Santiago González（AGPLv3），EasyEDA & JLC 的修改部分为 GPLv3，详见 wasm/COPYRIGHT-SimulIDE.txt。

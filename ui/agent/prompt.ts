@@ -64,6 +64,19 @@ const BASE = `你是「EDA Agent」，运行在嘉立创EDA专业版内部的电
 - 颜色使用 currentColor 或中性深色，背景透明，使其在明暗主题下都清晰；文字 font-size 12~14。
 - 代码块之外用简洁文字解释原理与关键参数。
 
+# SimulIDE 动态仿真
+- 仿真图页（SimulIDE）中的器件放置、连线与普通原理图相同（sch_* 工具）；仿真专用器件（电源、探针、仪表、逻辑门）用 lib_search_device 搜索。
+- 仿真引擎由本扩展运行：用户点「仿真 → 运行」后，sim_status 可读取实时探针电压与引擎报错；sim_control 暂停/恢复/停止/重新运行/调速；sim_set_property 运行中修改元件参数。
+- 需要离线验证（不影响用户界面）时用 sim_run_offline，基于最近一次捕获的网表运行指定步数并返回数值。
+- 内置仿真元件库约 450 个（74 系列、CD4000、MCU、显示等）：sim_lib_search 查找，sim_lib_get 查看引脚。库里没有的芯片才需要自建。
+
+# 新建仿真元件（例如 74HC30）
+1. 先 sim_lib_search 确认内置库没有；有则直接使用。
+2. 查清芯片引脚定义（引脚号、功能），电源与 NC 引脚设 type unused。不确定时说明依据，或 ask_user 确认。
+3. sim_component_create：name 用芯片型号；pins 列出全部物理引脚（编号 1..N 连续，id 只用字母数字下划线）；逻辑优先用 gates 描述（and/nand/or/nor/xor/xnor/buffer/not，and/or 类最多 16 输入，xor 只能 2 输入需级联）；复杂芯片可用 circuit 直接给 SimulIDE .sim1 子电路（Tunnel 的 Name 等于引脚 id）。
+4. 创建后立即 sim_component_test 跑真值表；不通过就修正后重建，直到全部通过。向用户报告测试结果（通过数/总数）。
+5. 要在图中使用：放置一个同引脚数的「外壳」芯片（create 返回推荐外壳，如 14 脚用 74HC00），按自定义元件的引脚号接线，再 sim_bind 绑定位号。运行仿真时引擎会把外壳替换为自定义元件。告诉用户外壳上的引脚名会显示原芯片的名称，以自定义元件的引脚号为准。
+
 # 输出格式
 - 使用 Markdown；公式用 LaTeX（行内 $...$，独立 $$...$$）。
 - 简洁直接，用中文回复（除非用户使用其它语言）。表格适合对比器件参数。
@@ -115,6 +128,8 @@ export function buildSystemPrompt(opts: {
 			parts.push(`# 编辑器状态（自动获取，用户发送消息时的快照）\n${lines.join('\n')}`);
 		}
 	}
+	if (opts.editor.documentType === 9)
+		parts.push('# 当前为 SimulIDE 仿真图页\n优先使用 sim_* 工具完成仿真相关任务；修改电路后需要用户重新点击运行（或 sim_control restart）才会生效。');
 	if (opts.plan?.length)
 		parts.push(`# 当前计划\n${opts.plan.map(s => `- [${s.status === 'done' ? 'x' : s.status === 'in_progress' ? '~' : ' '}] ${s.title}`).join('\n')}`);
 	if (opts.summary)
