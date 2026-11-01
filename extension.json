@@ -3,7 +3,7 @@
 	"uuid": "7bc1985683024c9ab16e8c65e1117e4c",
 	"displayName": "EDA Agent 智能助手",
 	"description": "嘉立创EDA专业版内置 AI Agent：工程 Agent 与独立 Agent、多会话、工具调用、权限审批、改动追踪与撤销，支持 DeepSeek 与任意 OpenAI 兼容接口",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"publisher": "EDA Agent",
 	"engines": {
 		"eda": "^3.2.0"

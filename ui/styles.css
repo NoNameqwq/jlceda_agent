@@ -817,3 +817,23 @@ textarea.input { height: auto; padding: 7px 10px; resize: vertical; min-height: 
 .field { display: flex; flex-direction: column; align-items: flex-start; }
 .field > .input, .field > textarea, .field > .input-group { align-self: stretch; }
 .field-hint { display: block; }
+
+/* ———————————— v1.2：处理过程分组 ———————————— */
+.process { margin: 2px 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); transition: border-color var(--dur), box-shadow var(--dur); }
+.process.open { box-shadow: var(--shadow-sm); }
+.process.live { border-color: var(--line-2); }
+.process-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 6px 10px; text-align: left; color: var(--fg-2); border-radius: var(--r); transition: background-color var(--dur), color var(--dur); }
+.process-head:hover { background: var(--bg-soft); color: var(--fg); }
+.process-title { font-weight: 500; font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-meta { flex: 1; min-width: 0; color: var(--fg-3); font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.process-meta .bad { color: var(--bad); }
+.process-toggle { font-size: 11px; color: var(--fg-3); flex-shrink: 0; }
+.process-head .chev { color: var(--fg-3); flex-shrink: 0; transition: transform var(--dur) var(--ease); }
+.process.open .process-head .chev { transform: rotate(90deg); }
+.process-body { padding: 4px 10px 8px; border-top: 1px solid var(--line); }
+.process-body .tool-list { margin: 4px 0; }
+.process-body .reasoning { margin: 4px 0 4px; }
+.process-text { color: var(--fg-2); font-size: 12.5px; }
+.tool-card.open > .collapse { grid-template-rows: 1fr; }
+.status-line.slow { color: var(--warn); }
+.status-line .link { margin-left: 4px; }

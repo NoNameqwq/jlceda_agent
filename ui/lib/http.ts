@@ -111,7 +111,31 @@ export async function httpRequest(url: string, o: HttpOptions = {}): Promise<Res
 }
 
 /** 逐行读取 SSE 流中的 data 字段 */
-export async function* readSSE(res: Response, signal?: AbortSignal): AsyncGenerator<string> {
+export class StallError extends Error {
+	constructor(sec: number) {
+		super(`模型响应中断（${sec} 秒没有收到新数据）`);
+		this.name = 'StallError';
+	}
+}
+
+/** 带空闲超时的 read：超过 idleMs 没有数据就抛出 StallError，避免永久卡住 */
+function readWithIdle(reader: any, idleMs: number): Promise<{ done: boolean; value?: Uint8Array }> {
+	return new Promise((resolve, reject) => {
+		const t = setTimeout(() => {
+			reader.cancel().catch(() => {});
+			reject(new StallError(Math.round(idleMs / 1000)));
+		}, idleMs);
+		reader.read().then((r: any) => {
+			clearTimeout(t);
+			resolve(r);
+		}, (e: unknown) => {
+			clearTimeout(t);
+			reject(e);
+		});
+	});
+}
+
+export async function* readSSE(res: Response, signal?: AbortSignal, idleMs = 90_000): AsyncGenerator<string> {
 	const body: any = res.body;
 	if (!body || typeof body.getReader !== 'function') {
 		const text = await res.text();
@@ -132,7 +156,7 @@ export async function* readSSE(res: Response, signal?: AbortSignal): AsyncGenera
 		while (true) {
 			if (signal?.aborted)
 				throw abortError();
-			const { done, value } = await reader.read();
+			const { done, value } = await readWithIdle(reader, idleMs);
 			if (done)
 				break;
 			buf += decoder.decode(value, { stream: true });

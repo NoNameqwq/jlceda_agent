@@ -53,7 +53,19 @@ function passReasoning(providerKind: string, reasoning: boolean): boolean {
 export class Session {
 	conv: Conversation;
 	running = false;
-	status = '';
+	/** 状态文字最近一次变化的时间（界面据此显示已等待秒数） */
+	statusAt = Date.now();
+	private _status = '';
+	get status(): string {
+		return this._status;
+	}
+
+	set status(v: string) {
+		if (v !== this._status) {
+			this._status = v;
+			this.statusAt = Date.now();
+		}
+	}
 	approval?: PendingApproval;
 	question?: PendingQuestion;
 	lastError?: string;
@@ -587,6 +599,15 @@ export class Session {
 				let result;
 				try {
 					result = await chatCompletion({ model: resolved, messages: wire, tools: wireTools.length ? wireTools : undefined, stream: settings.streaming, signal }, {
+						onReset: () => {
+							am.content = '';
+							am.reasoning = '';
+							this.emit();
+						},
+						onRetry: (n, reason) => {
+							this.status = `连接不稳定，正在重试（第 ${n} 次）：${truncate(reason, 40, false)}`;
+							this.emit();
+						},
 						onContent: (d) => {
 							am.content += d;
 							this.status = '正在回复…';
@@ -628,6 +649,8 @@ export class Session {
 				this.conv.lastPromptTokens = this.contextTokens;
 				if (!am.reasoning)
 					delete am.reasoning;
+				if (result.finishReason === 'error' && !result.toolCalls.length)
+					am.error = '回复中途断开，内容可能不完整。可点「重试」继续。';
 				if (result.finishReason === 'length' && !result.toolCalls.length)
 					am.error = '回复达到最大输出长度被截断，可在高级设置中调大「最大输出」。';
 
@@ -841,7 +864,8 @@ export class Session {
 		};
 
 		try {
-			const r: any = await def.run(args, ctx);
+			const limit = toolTimeout(name);
+			const r: any = limit ? await withToolTimeout(def.run(args, ctx), limit, def.title, signal) : await def.run(args, ctx);
 			const isRich = r && typeof r === 'object' && 'content' in r && Object.keys(r).every(k => k === 'content' || k === 'display');
 			const content = isRich ? r.content : r;
 			if (isRich && r.display)
@@ -864,6 +888,45 @@ export class Session {
 			return `工具执行出错：${msg}`;
 		}
 	}
+}
+
+/** 工具超时（毫秒）：交互类不限时；自动布线/导出等耗时操作放宽 */
+function toolTimeout(name: string): number {
+	if (name === 'ask_user')
+		return 0;
+	if (/^(pcb_auto|sch_auto_arrange|place_order|run_script)$/.test(name))
+		return 10 * 60_000;
+	if (/^(export_|pcb_drc|sch_drc|pcb_import_changes|sch_import_changes|view_screenshot|lib_)/.test(name))
+		return 120_000;
+	return 45_000;
+}
+
+/** EDA 接口偶尔不返回，超时后放弃等待并把结果告诉模型，避免整轮卡死 */
+function withToolTimeout<T>(p: Promise<T>, ms: number, title: string, signal: AbortSignal): Promise<T> {
+	return new Promise((resolve, reject) => {
+		const t = setTimeout(() => {
+			cleanup();
+			reject(new Error(`「${title}」超过 ${Math.round(ms / 1000)} 秒未返回，已放弃等待。EDA 可能仍在后台执行，请用查询工具确认结果后再继续，不要直接重复该操作。`));
+		}, ms);
+		const onAbort = () => {
+			cleanup();
+			const e = new Error('已中止');
+			e.name = 'AbortError';
+			reject(e);
+		};
+		const cleanup = () => {
+			clearTimeout(t);
+			signal.removeEventListener('abort', onAbort);
+		};
+		signal.addEventListener('abort', onAbort);
+		p.then((v) => {
+			cleanup();
+			resolve(v);
+		}, (e) => {
+			cleanup();
+			reject(e);
+		});
+	});
 }
 
 function safeSummary(fn: () => string): string | undefined {

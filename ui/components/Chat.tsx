@@ -44,7 +44,7 @@ function Reasoning(props: { text: string; streaming: boolean; theme: Theme }) {
 				{props.streaming && <span class="dots"><i /><i /><i /></span>}
 				<IconChevronRight size={12} class="chev" />
 			</button>
-			<div class="collapse"><div class="collapse-inner">
+			<div class={`collapse ${open ? 'open' : ''}`}><div class="collapse-inner">
 				<div class="reasoning-body">{props.text}</div>
 			</div></div>
 		</div>
@@ -124,7 +124,7 @@ function ToolCard(props: { run: ToolRun; theme: Theme; onUndo?: (changeId: strin
 					<img src={display.src} alt={display.caption ?? ''} loading="lazy" onClick={() => openImage(display.src)} />
 				</div>
 			)}
-			<div class="collapse"><div class="collapse-inner">
+			<div class={`collapse ${open ? 'open' : ''}`}><div class="collapse-inner">
 				<div class="tool-body">
 					<div class="tool-sec">
 						<div class="tool-label">参数<span class="tool-name">{r.name}</span></div>
@@ -319,33 +319,92 @@ function groupTurns(messages: ChatMessage[], start: number): TurnGroup[] {
 	return groups;
 }
 
+/** 一轮回复中的「过程」：思考、中间说明、工具调用。整体可收起，最终回答始终显示在外面 */
+function ProcessGroup(props: { parts: ChatMessage[]; running: boolean; session: Session; theme: Theme; showReasoning: boolean; onUndo: (id: string) => void }) {
+	const runs = props.parts.flatMap(m => m.toolRuns ?? []);
+	const [open, setOpen] = useState(props.running);
+	const wasRunning = useRef(props.running);
+	useEffect(() => {
+		// 运行中自动展开；本轮结束后自动收起
+		if (props.running && !wasRunning.current)
+			setOpen(true);
+		else if (!props.running && wasRunning.current)
+			setOpen(false);
+		wasRunning.current = props.running;
+	}, [props.running]);
+	const failed = runs.filter(r => r.status === 'error' || r.status === 'denied').length;
+	const start = props.parts[0]?.createdAt ?? 0;
+	let end = start;
+	for (const m of props.parts)
+		end = Math.max(end, m.createdAt + (m.durationMs ?? 0));
+	for (const r of runs)
+		end = Math.max(end, r.endedAt ?? 0);
+	const secs = end > start ? (end - start) / 1000 : 0;
+	const current = runs.find(r => r.status === 'running' || r.status === 'awaiting');
+	const changes = props.session.conv.changes;
+	return (
+		<div class={`process ${open ? 'open' : ''} ${props.running ? 'live' : ''}`}>
+			<button type="button" class="process-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+				{props.running ? <Spinner size={12} /> : <IconTool size={13} />}
+				<span class="process-title">
+					{props.running ? (current ? `正在${current.title}` : '正在处理') : '处理过程'}
+				</span>
+				<span class="process-meta">
+					{runs.length > 0 && `${runs.length} 步`}
+					{failed > 0 && <span class="bad">{` · ${failed} 失败`}</span>}
+					{secs >= 0.1 && ` · ${secs < 60 ? `${secs.toFixed(1)}s` : `${Math.floor(secs / 60)}m${Math.round(secs % 60)}s`}`}
+				</span>
+				<span class="process-toggle">{open ? '收起' : '展开'}</span>
+				<IconChevronRight size={12} class="chev" />
+			</button>
+			<div class={`collapse ${open ? 'open' : ''}`}><div class="collapse-inner">
+				<div class="process-body">
+					{props.parts.map(m => (
+						<div key={m.id} class="a-part">
+							{props.showReasoning && m.reasoning && <Reasoning text={m.reasoning} streaming={!!m.streaming && !m.content} theme={props.theme} />}
+							{m.content && <Markdown text={m.content} streaming={m.streaming} theme={props.theme} class="process-text" />}
+							{!!m.toolRuns?.length && (
+								<div class="tool-list">
+									{m.toolRuns.map(r => (
+										<ToolCard key={r.callId} run={r} theme={props.theme} onUndo={props.onUndo} undone={changes.find(c => c.id === r.changeId)?.status === 'undone'} />
+									))}
+								</div>
+							)}
+							{m.error && <div class="msg-error"><IconAlert size={14} /><span>{m.error}</span></div>}
+						</div>
+					))}
+				</div>
+			</div></div>
+		</div>
+	);
+}
+
 function AssistantTurn(props: { items: ChatMessage[]; session: Session; theme: Theme; showReasoning: boolean; isLast: boolean }) {
 	const s = props.session;
-	const changes = s.conv.changes;
-	const text = props.items.map(m => m.content).filter(Boolean).join('\n\n');
-	const last = props.items[props.items.length - 1];
+	const items = props.items;
+	const running = props.isLast && s.running;
+	const last = items[items.length - 1];
+	// 最后一条不含工具调用的消息视为最终回答，放在过程之外
+	const final = last && !last.toolRuns?.length ? last : undefined;
+	const parts = final ? items.slice(0, -1) : items;
+	const hasProcess = parts.some(m => m.toolRuns?.length || m.content || m.reasoning || m.error);
+	const text = items.map(m => m.content).filter(Boolean).join('\n\n');
 	const undo = async (id: string) => {
 		const errs = await s.undoRecord(id);
 		notify(errs.length ? errs.join('；') : '已撤销', errs.length ? 'error' : 'success');
 	};
-	const usage = props.items.reduce((acc, m) => acc + (m.usage?.completion ?? 0), 0);
+	const usage = items.reduce((acc, m) => acc + (m.usage?.completion ?? 0), 0);
 	return (
 		<div class="msg assistant">
-			{props.items.map(m => (
-				<div key={m.id} class="a-part">
-					{props.showReasoning && m.reasoning && <Reasoning text={m.reasoning} streaming={!!m.streaming && !m.content} theme={props.theme} />}
-					{m.content && <Markdown text={m.content} streaming={m.streaming} theme={props.theme} />}
-					{m.streaming && !m.content && !m.reasoning && <div class="typing"><span class="dots"><i /><i /><i /></span></div>}
-					{!!m.toolRuns?.length && (
-						<div class="tool-list">
-							{m.toolRuns.map(r => (
-								<ToolCard key={r.callId} run={r} theme={props.theme} onUndo={undo} undone={changes.find(c => c.id === r.changeId)?.status === 'undone'} />
-							))}
-						</div>
-					)}
-					{m.error && <div class="msg-error"><IconAlert size={14} /><span>{m.error}</span></div>}
+			{hasProcess && <ProcessGroup parts={parts} running={running && !final?.content} session={s} theme={props.theme} showReasoning={props.showReasoning} onUndo={undo} />}
+			{final && (
+				<div class="a-part">
+					{props.showReasoning && final.reasoning && <Reasoning text={final.reasoning} streaming={!!final.streaming && !final.content} theme={props.theme} />}
+					{final.content && <Markdown text={final.content} streaming={final.streaming} theme={props.theme} />}
+					{final.streaming && !final.content && !final.reasoning && <div class="typing"><span class="dots"><i /><i /><i /></span></div>}
+					{final.error && <div class="msg-error"><IconAlert size={14} /><span>{final.error}</span></div>}
 				</div>
-			))}
+			)}
 			{last && !last.streaming && !s.running && (
 				<div class="msg-actions">
 					{text && <button type="button" class="ma" title="复制回复" onClick={() => void copyText(text).then(() => notify('已复制'))}><IconCopy size={13} /></button>}
@@ -354,6 +413,25 @@ function AssistantTurn(props: { items: ChatMessage[]; session: Session; theme: T
 					{usage > 0 && <span class="muted">· {usage} tokens</span>}
 				</div>
 			)}
+		</div>
+	);
+}
+
+/** 运行状态行：显示已等待秒数，便于判断是否卡住 */
+function StatusLine(props: { session: Session }) {
+	const s = props.session;
+	const [, tick] = useState(0);
+	useEffect(() => {
+		const t = setInterval(() => tick(x => x + 1), 1000);
+		return () => clearInterval(t);
+	}, []);
+	const secs = Math.max(0, Math.floor((Date.now() - s.statusAt) / 1000));
+	return (
+		<div class={`status-line ${secs >= 60 ? 'slow' : ''}`}>
+			<Spinner size={12} />
+			<span>{s.status || '处理中…'}</span>
+			{secs >= 3 && <span class="muted">{`${secs}s`}</span>}
+			{secs >= 60 && <button type="button" class="link" onClick={() => s.stop()}>停止</button>}
 		</div>
 	);
 }
@@ -432,7 +510,7 @@ export function ChatView(props: {
 					</div>
 				))}
 				{s.running && !s.approval && !s.question && !lastStreaming(s) && (
-					<div class="status-line"><Spinner size={12} /><span>{s.status || '处理中…'}</span></div>
+					<StatusLine session={s} />
 				)}
 				{s.lastError && !s.running && (
 					<div class="msg-error block">

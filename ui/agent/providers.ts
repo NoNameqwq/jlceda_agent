@@ -5,7 +5,7 @@
  */
 import type { ModelInfo, ModelOverride, ProviderConfig, Settings, ThinkingLevel, ToolCall, Usage } from './types';
 import { httpRequest, isAbort, readSSE } from '../lib/http';
-import { errorMessage, safeJsonParse, truncate } from '../lib/util';
+import { errorMessage, safeJsonParse, sleep, truncate } from '../lib/util';
 
 export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 
@@ -292,6 +292,10 @@ export interface ChatRequest {
 }
 
 export interface StreamHandlers {
+	/** 重试前调用：界面清空已流式显示的半截内容 */
+	onReset?: () => void;
+	/** 重试提示 */
+	onRetry?: (attempt: number, reason: string) => void;
 	onContent?: (delta: string) => void;
 	onReasoning?: (delta: string) => void;
 	onToolCallDelta?: (calls: ToolCall[]) => void;
@@ -383,7 +387,58 @@ function finalizeCalls(acc: Map<number, ToolCall>): ToolCall[] {
 	})).filter(c => c.name);
 }
 
+/** 读取响应体（带超时，防止接口不结束导致卡死） */
+function bodyJson(res: Response, ms: number): Promise<any> {
+	return new Promise((resolve, reject) => {
+		const t = setTimeout(() => reject(new Error(`读取响应超时（${Math.round(ms / 1000)} 秒）`)), ms);
+		res.json().then((v) => {
+			clearTimeout(t);
+			resolve(v);
+		}, (e) => {
+			clearTimeout(t);
+			reject(e);
+		});
+	});
+}
+
+/** 可重试的错误：网络、超时、流中断、429、5xx */
+function retryable(msg: string): boolean {
+	return /超时|中断|无响应|网络请求失败|Failed to fetch|NetworkError|network|ECONN|socket|HTTP (408|409|425|429|500|502|503|504|520|522|524)/i.test(msg);
+}
+
+/** 带自动重试的对话请求（最多 3 次，指数退避）。工具调用参数不完整时也会重试 */
 export async function chatCompletion(req: ChatRequest, h: StreamHandlers = {}): Promise<ChatResult> {
+	const MAX = 3;
+	let lastErr: unknown;
+	for (let attempt = 1; attempt <= MAX; attempt++) {
+		if (attempt > 1) {
+			h.onReset?.();
+			h.onRetry?.(attempt, errorMessage(lastErr));
+			await sleep(Math.min(8000, 1200 * 2 ** (attempt - 2)));
+			if (req.signal?.aborted)
+				throw lastErr;
+		}
+		try {
+			const r = await chatOnce(req, h);
+			// 流在工具调用中途断开：参数 JSON 不完整，不能执行，重试
+			if (r.finishReason === 'error' && r.toolCalls.some(c => safeJsonParse(c.arguments, undefined) === undefined)) {
+				lastErr = new Error('流式响应中断，工具调用参数不完整');
+				continue;
+			}
+			return r;
+		}
+		catch (e) {
+			if (isAbort(e) || req.signal?.aborted)
+				throw e;
+			lastErr = e;
+			if (!retryable(errorMessage(e)) || attempt === MAX)
+				throw e;
+		}
+	}
+	throw lastErr;
+}
+
+async function chatOnce(req: ChatRequest, h: StreamHandlers = {}): Promise<ChatResult> {
 	const p = req.model.provider;
 	const url = `${providerBaseUrl(p)}/chat/completions`;
 	const doRequest = async (stream: boolean) => httpRequest(url, {
@@ -391,7 +446,7 @@ export async function chatCompletion(req: ChatRequest, h: StreamHandlers = {}): 
 		headers: headers(p),
 		body: JSON.stringify(buildBody(req, stream)),
 		signal: req.signal,
-		timeoutMs: 300_000,
+		timeoutMs: 180_000,
 	});
 
 	let res = await doRequest(req.stream);
@@ -410,7 +465,7 @@ export async function chatCompletion(req: ChatRequest, h: StreamHandlers = {}): 
 
 	const ctype = res.headers.get('content-type') || '';
 	if (!req.stream || (!ctype.includes('event-stream') && ctype.includes('json'))) {
-		const j = await res.json();
+		const j = await bodyJson(res, 120_000);
 		if (j?.error)
 			throw new Error(j.error.message || JSON.stringify(j.error));
 		const msg = j?.choices?.[0]?.message ?? {};
