@@ -286,7 +286,7 @@ const metaTools: ToolDef[] = [
 		title: '查询 API 文档',
 		group: 'meta',
 		risk: 'read',
-		description: '渐进式查询嘉立创EDA 扩展 API：不传参数返回类列表；传 class_name（如 sch_PrimitiveWire 或 SCH_PrimitiveWire）返回方法列表；再传 method_name 返回参数与返回值详情。在使用 eda_call 之前用它确认签名。',
+		description: '仅用于查询系统提示词手册未覆盖的冷门嘉立创EDA API。优先同时传 class_name 与 method_name 精确查询签名；不要为已有专用工具或手册已列出的接口调用本工具。无参数类列表仅在完全不知道类名时使用。',
 		parameters: S.obj({
 			class_name: S.str('类名或类实例名'),
 			method_name: S.str('方法名'),
@@ -317,7 +317,7 @@ const metaTools: ToolDef[] = [
 		title: '调用 EDA API',
 		group: 'advanced',
 		risk: a => READ_PREFIX.test(String(a?.path ?? '').split('.').pop() ?? '') ? 'read' : 'danger',
-		description: '直接调用任意嘉立创EDA 扩展 API（eda.类实例名.方法名）。用于专用工具未覆盖的功能。参数按位置以数组传入，枚举请直接传其字符串/数字值。返回值会自动序列化（图元的 getState_* 会展开）。名称以 get/is/search 开头的方法视为只读，其它视为高风险写操作。调用前建议先用 eda_help 确认签名。',
+		description: '直接调用任意嘉立创EDA 扩展 API（eda.类实例名.方法名）。用于专用工具未覆盖的功能。参数按位置以数组传入，枚举请直接传其字符串/数字值。优先使用系统提示词中已注入的常用接口签名；仅手册未覆盖时才用 eda_help 精确查询。名称以 get/is/search 开头的方法视为只读，其它视为高风险写操作。',
 		parameters: S.obj({
 			path: S.str('如 sch_PrimitiveWire.getAll、pcb_Net.getNetLength'),
 			args: S.arr({}, '按顺序传入的参数数组'),

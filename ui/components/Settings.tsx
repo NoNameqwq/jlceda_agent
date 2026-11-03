@@ -6,6 +6,7 @@ import type { Workspace } from '../agent/workspace';
 import { useMemo, useState } from 'preact/hooks';
 import { MODE_DESC, MODE_LABEL, RISK_LABEL } from '../agent/permissions';
 import { DEEPSEEK_BASE_URL, inferCapabilities, overrideKey, resolveModel, testConnection } from '../agent/providers';
+import { BUILTIN_SKILLS } from '../agent/skills';
 import { getEda } from '../lib/eda';
 import { storageBackend } from '../lib/storage';
 import { errorMessage, formatTokens, uid } from '../lib/util';
@@ -13,9 +14,9 @@ import { allTools, GROUP_LABEL, toolRisk } from '../tools/registry';
 import { confirmDialog, notify, Select, Spinner, Toggle } from './common';
 import { hasOverride, ModelParams } from './ModelParams';
 import { Drawer } from './Panels';
-import { IconCheck, IconEye, IconFolder, IconGlobe, IconSliders, IconEyeOff, IconMonitor, IconMoon, IconPlug, IconPlus, IconRefresh, IconSettings, IconShield, IconSun, IconTrash, IconX } from './icons';
+import { IconCheck, IconEye, IconFolder, IconGlobe, IconLayers, IconSliders, IconEyeOff, IconMonitor, IconMoon, IconPlug, IconPlus, IconRefresh, IconSearch, IconSettings, IconShield, IconSun, IconTrash, IconX } from './icons';
 
-type Tab = 'model' | 'permission' | 'general';
+type Tab = 'model' | 'skills' | 'permission' | 'general';
 
 function Field(props: { label: string; hint?: string; children: preact.ComponentChildren }) {
 	return (
@@ -358,6 +359,60 @@ function PermissionTab(props: { ws: Workspace }) {
 	);
 }
 
+// ———————————————————— 技能 ————————————————————
+
+function SkillsTab(props: { ws: Workspace }) {
+	const { ws } = props;
+	const [q, setQ] = useState('');
+	const enabled = ws.settings.enabledSkills;
+	const filtered = BUILTIN_SKILLS.filter((s) => {
+		const text = `${s.name} ${s.description} ${s.category} ${s.tags.join(' ')}`.toLowerCase();
+		return !q.trim() || text.includes(q.trim().toLowerCase());
+	});
+	const toggle = (id: string) => {
+		ws.updateSettings({ enabledSkills: enabled.includes(id) ? enabled.filter(x => x !== id) : [...enabled, id] });
+	};
+	return (
+		<div class="tab-body">
+			<p class="section-desc">技能是可选的专业设计规则，挂载后注入后续对话的系统提示词。全部离线内置，不下载或执行第三方脚本。</p>
+			<div class="search-box">
+				<IconSearch size={14} />
+				<input class="input" placeholder="搜索原理图、PCB、仿真、EMC…" value={q} onInput={e => setQ((e.target as HTMLInputElement).value)} />
+			</div>
+			<div class="skill-toolbar">
+				<span>已挂载 <b>{enabled.length}</b> / {BUILTIN_SKILLS.length}</span>
+				<span class="btn-row">
+					<button type="button" class="link-btn" onClick={() => ws.updateSettings({ enabledSkills: BUILTIN_SKILLS.map(s => s.id) })}>全部挂载</button>
+					<button type="button" class="link-btn" disabled={!enabled.length} onClick={() => ws.updateSettings({ enabledSkills: [] })}>全部卸载</button>
+				</span>
+			</div>
+			<div class="skill-list">
+				{filtered.map((s) => {
+					const on = enabled.includes(s.id);
+					return (
+						<div key={s.id} class={`skill-card ${on ? 'mounted' : ''}`}>
+							<div class="skill-head">
+								<div class="skill-title">
+									<span>{s.name}</span>
+									<span class="skill-category">{s.category}</span>
+								</div>
+								<button type="button" role="switch" aria-checked={on} aria-label={`${on ? '卸载' : '挂载'}${s.name}`} class={`switch ${on ? 'on' : ''}`} onClick={() => toggle(s.id)}><span class="knob" /></button>
+							</div>
+							<p class="skill-desc">{s.description}</p>
+							<div class="skill-foot">
+								<span class="skill-tags">{s.tags.map(t => <span key={t} class="cap">{t}</span>)}</span>
+								<a class="skill-source" href={s.source} target="_blank" rel="noreferrer" title={s.source}>来源 · {s.license}</a>
+							</div>
+						</div>
+					);
+				})}
+				{!filtered.length && <div class="empty-hint sm">没有匹配的技能。</div>}
+			</div>
+			<p class="skill-note">接口与工具手册始终自动注入，无需挂载技能。技能只补充相应领域的工程规则。</p>
+		</div>
+	);
+}
+
 // ———————————————————— 通用 ————————————————————
 
 function GeneralTab(props: { ws: Workspace }) {
@@ -475,7 +530,7 @@ function switchDock(ws: Workspace, mode: 'panel' | 'float'): void {
 
 export function SettingsPanel(props: { open: boolean; onClose: () => void; ws: Workspace; tab?: Tab }) {
 	const [tab, setTab] = useState<Tab>(props.tab && props.tab !== ('advanced' as string) ? props.tab : 'model');
-	const tabs: Array<[Tab, string, any]> = [['model', '模型接口', IconPlug], ['permission', '权限', IconShield], ['general', '通用', IconSettings]];
+	const tabs: Array<[Tab, string, any]> = [['model', '模型接口', IconPlug], ['skills', '技能', IconLayers], ['permission', '权限', IconShield], ['general', '通用', IconSettings]];
 	return (
 		<Drawer open={props.open} onClose={props.onClose} title="设置" icon={<IconSettings size={15} />}>
 			<nav class="tabs">
@@ -489,6 +544,7 @@ export function SettingsPanel(props: { open: boolean; onClose: () => void; ws: W
 			</nav>
 			<div class="tab-stage" key={tab}>
 				{tab === 'model' && <ModelTab ws={props.ws} />}
+				{tab === 'skills' && <SkillsTab ws={props.ws} />}
 				{tab === 'permission' && <PermissionTab ws={props.ws} />}
 				{tab === 'general' && <GeneralTab ws={props.ws} />}
 			</div>

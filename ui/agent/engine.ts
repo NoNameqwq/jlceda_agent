@@ -15,6 +15,7 @@ import { getTool, resultToString, toolRisk, toolsForScene, toWire } from '../too
 import { decide } from './permissions';
 import { buildSystemPrompt, SUMMARY_PROMPT, TITLE_PROMPT } from './prompt';
 import { chatCompletion, resolveModel } from './providers';
+import { buildToolPrimer } from './tool-primer';
 import { undoChange } from './undo';
 
 export type ApprovalChoice = 'allow' | 'allow-session' | 'deny';
@@ -425,8 +426,9 @@ export class Session {
 		const resolved = resolveModel(settings);
 		if (!resolved)
 			return undefined;
-		const tools = toolsForScene(editor.available ? editor.scene : 'none', n => settings.toolRules[n] === 'deny').map(toWire);
-		const system = buildSystemPrompt({ editor, mode: this.conv.permissionMode, vision: resolved.vision, model: resolved.model, plan: this.conv.plan, custom: settings.customInstructions, summary: this.conv.summary, autoContext: settings.autoContext, scope: settings.scope });
+		const defs = toolsForScene(editor.available ? editor.scene : 'none', n => settings.toolRules[n] === 'deny');
+		const tools = defs.map(toWire);
+		const system = buildSystemPrompt({ editor, mode: this.conv.permissionMode, vision: resolved.vision, model: resolved.model, plan: this.conv.plan, custom: settings.customInstructions, summary: this.conv.summary, autoContext: settings.autoContext, scope: settings.scope, toolPrimer: buildToolPrimer(defs), skills: settings.enabledSkills });
 		const wire = this.buildWire(system, resolved.vision, passReasoning(resolved.provider.kind, resolved.reasoning));
 		const budget = Math.max(4000, resolved.contextWindow - resolved.maxOutput - 1500);
 		return this.computeBreakdown(wire, tools, resolved.contextWindow, resolved.maxOutput, budget * 0.85, resolved.model);
@@ -559,6 +561,8 @@ export class Session {
 					autoContext: settings.autoContext,
 					scope: settings.scope,
 					overview,
+					toolPrimer: buildToolPrimer(tools),
+					skills: settings.enabledSkills,
 				});
 				const system = buildSystemPrompt(promptOpts());
 				const reasoningPass = passReasoning(resolved.provider.kind, resolved.reasoning);

@@ -5,6 +5,7 @@
  * → 电路讲解时的 HTML 画图规范 → 输出格式 → 动态上下文。
  */
 import type { AgentScope, EditorContext, PermissionMode, PlanStep, ProjectOverview } from './types';
+import { buildSkillsPrompt } from './skills';
 
 const MODE_TEXT: Record<PermissionMode, string> = {
 	'readonly': '只读：只能使用查询类工具，任何修改设计的工具都会被拒绝。如用户要求修改，请说明需要切换权限模式。',
@@ -29,7 +30,8 @@ const BASE = `你是「EDA Agent」，运行在嘉立创EDA专业版内部的电
 - 不确定时（例如“设计一个 5V 转 3.3V 电路”），先简要回答并用 ask_user 询问是否要在当前原理图中搭建。
 
 # 工具使用
-- 优先使用专用工具（sch_* / pcb_* / lib_* 等）。专用工具不足时：先用 eda_help 查签名，再用 eda_call 调用任意扩展 API；批量/复杂逻辑才用 run_script。
+- 优先使用专用工具（sch_* / pcb_* / lib_* 等）。对话开始的系统提示词已经注入全部可用工具的用途、参数和常用底层 API 签名，直接按手册调用，不要为了已知工具或常规操作读取文档。
+- 专用工具不足且手册没有对应签名时，才用 eda_help 精确查询一个类/方法，再用 eda_call；不要从类列表开始逐层翻阅。批量/复杂逻辑才用 run_script。
 - 器件必须先通过 lib_search_device（关键词，如 "10k 0603"、"STM32F103C8T6"）或 lib_get_by_lcsc（立创编号）获取 libraryUuid 与 uuid，再放置。优先选嘉立创基础库/常用器件。
 - 放置器件后，工具会返回每个引脚的编号、名称和端点坐标，连线时必须使用这些真实坐标。
 - 能用网络标识（电源/地符号、网络标签）表达的连接，优先用它代替长距离导线，图面更清晰。
@@ -97,8 +99,15 @@ export function buildSystemPrompt(opts: {
 	autoContext: boolean;
 	scope?: AgentScope;
 	overview?: ProjectOverview;
+	toolPrimer?: string;
+	skills?: string[];
 }): string {
 	const parts = [BASE];
+	if (opts.toolPrimer)
+		parts.push(opts.toolPrimer);
+	const skills = buildSkillsPrompt(opts.skills);
+	if (skills)
+		parts.push(skills);
 	if (opts.scope === 'global') {
 		parts.push('# 工作范围：独立 Agent\n你是独立助手，对话不绑定某个工程，用户可能在多个工程间切换。操作设计前先用 get_editor_context 确认当前打开的是哪个工程与文档，并在回复中点明。');
 	}

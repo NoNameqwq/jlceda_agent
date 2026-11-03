@@ -193,6 +193,8 @@ export interface Settings {
 	autoOpenOnProject: boolean;
 	showReasoning: boolean;
 	customInstructions: string;
+	/** 已挂载的内置技能 ID；仅挂载项注入系统提示词 */
+	enabledSkills: string[];
 	sendKey: 'enter' | 'ctrlEnter';
 }
 

@@ -31,6 +31,7 @@ export function defaultSettings(): Settings {
 		autoOpenOnProject: true,
 		showReasoning: true,
 		customInstructions: '',
+		enabledSkills: [],
 		sendKey: 'enter',
 	};
 }
@@ -68,6 +69,7 @@ export async function loadSettings(): Promise<Settings> {
 		(merged as any).dockVersion = 2;
 	}
 	merged.uiScale = Math.min(1.6, Math.max(0.7, Number(merged.uiScale) || 1));
+	merged.enabledSkills = Array.isArray(merged.enabledSkills) ? [...new Set(merged.enabledSkills.filter(x => typeof x === 'string'))] : [];
 	if (merged.scope !== 'global')
 		merged.scope = 'project';
 	return merged;
