@@ -837,3 +837,11 @@ textarea.input { height: auto; padding: 7px 10px; resize: vertical; min-height: 
 .tool-card.open > .collapse { grid-template-rows: 1fr; }
 .status-line.slow { color: var(--warn); }
 .status-line .link { margin-left: 4px; }
+
+/* v1.5：HTML 预览只保留边框；截图默认收起 */
+.html-preview { padding: 6px; }
+.html-preview .preview-frame { border-radius: calc(var(--r) - 4px); }
+.html-preview .preview-loading { border-radius: calc(var(--r) - 4px); }
+.tool-img-tag { flex-shrink: 0; height: 16px; padding: 0 5px; border-radius: 4px; font-size: 10.5px; line-height: 16px; color: var(--fg-3); background: var(--bg-sunk); }
+.tool-body .tool-image { margin: 0 0 8px; }
+.tool-body .tool-image img { display: block; max-width: 100%; border-radius: var(--r-sm); }

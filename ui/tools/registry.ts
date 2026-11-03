@@ -46,7 +46,7 @@ export interface ToolDef {
 	run: (args: any, ctx: ToolContext) => Promise<ToolResult | unknown>;
 }
 
-export type ToolGroup = 'meta' | 'project' | 'view' | 'sch' | 'pcb' | 'lib' | 'sim' | 'export' | 'advanced';
+export type ToolGroup = 'meta' | 'project' | 'view' | 'sch' | 'pcb' | 'lib' | 'export' | 'advanced';
 
 export const GROUP_LABEL: Record<ToolGroup, string> = {
 	meta: '交互与规划',
@@ -55,7 +55,6 @@ export const GROUP_LABEL: Record<ToolGroup, string> = {
 	sch: '原理图',
 	pcb: 'PCB',
 	lib: '器件库',
-	sim: '仿真（SimulIDE）',
 	export: '导出与生产',
 	advanced: '高级',
 };

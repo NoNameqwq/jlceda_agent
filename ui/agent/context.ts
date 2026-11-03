@@ -73,7 +73,7 @@ export async function readEditorContext(): Promise<EditorContext> {
 	const ctx: EditorContext = {
 		available: true,
 		scene,
-		sceneLabel: SCENE_LABEL[scene],
+		sceneLabel: doc && Number(doc.documentType) === 9 ? '仿真图页（SimulIDE）' : doc && Number(doc.documentType) === 8 ? '仿真图页（Ngspice）' : SCENE_LABEL[scene],
 		documentType: doc ? Number(doc.documentType) : undefined,
 		documentUuid: doc?.uuid,
 		projectUuid: project?.uuid ?? doc?.parentProjectUuid,

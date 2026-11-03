@@ -1,10 +1,10 @@
 {
 	"name": "jlc-eda-agent",
 	"type": "module",
-	"version": "1.3.0",
+	"version": "1.5.2",
 	"description": "JLCEDA & EasyEDA Professional Extension API Development Toolkit",
 	"author": "JLCEDA <support@lceda.cn>",
-	"license": "AGPL-3.0-or-later",
+	"license": "Apache-2.0",
 	"homepage": "https://pro.lceda.cn/",
 	"bin": {
 		"create-easyeda-api-sdk": "./build/create.js"

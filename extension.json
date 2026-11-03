@@ -3,12 +3,12 @@
 	"uuid": "7bc1985683024c9ab16e8c65e1117e4c",
 	"displayName": "EDA Agent 智能助手",
 	"description": "嘉立创EDA专业版内置 AI Agent：工程 Agent 与独立 Agent、多会话、工具调用、权限审批、改动追踪与撤销，支持 DeepSeek 与任意 OpenAI 兼容接口",
-	"version": "1.3.0",
+	"version": "1.5.2",
 	"publisher": "EDA Agent",
 	"engines": {
 		"eda": "^3.2.0"
 	},
-	"license": "AGPL-3.0-or-later",
+	"license": "Apache-2.0",
 	"repository": {
 		"type": "extension-store",
 		"url": ""
@@ -102,14 +102,19 @@
 						"registerFn": "openGlobalAgent"
 					},
 					{
+						"id": "jlcAgentSchDock",
+						"title": "停靠 / 吸附到最右侧",
+						"registerFn": "openDockedPanel"
+					},
+					{
 						"id": "jlcAgentSchFloat",
 						"title": "以浮动窗口打开",
 						"registerFn": "openFloatingWindow"
 					},
 					{
-						"id": "jlcAgentSchDock",
-						"title": "停靠到右侧面板",
-						"registerFn": "openDockedPanel"
+						"id": "jlcAgentSchDiag",
+						"title": "停靠诊断",
+						"registerFn": "dockDiagnose"
 					},
 					{
 						"id": "jlcAgentSchAbout",
@@ -121,18 +126,43 @@
 		],
 		"symbol": [
 			{
-				"id": "jlcAgentSym",
+				"id": "jlcAgentSymbol",
 				"title": "AI 助手",
 				"menuItems": [
 					{
-						"id": "jlcAgentSymToggle",
+						"id": "jlcAgentSymbolToggle",
 						"title": "打开/收起 (Alt+A)",
 						"registerFn": "toggleSidebar"
 					},
 					{
-						"id": "jlcAgentSymGlobal",
+						"id": "jlcAgentSymbolProject",
+						"title": "工程 Agent",
+						"registerFn": "openProjectAgent"
+					},
+					{
+						"id": "jlcAgentSymbolGlobal",
 						"title": "独立 Agent",
 						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentSymbolDock",
+						"title": "停靠 / 吸附到最右侧",
+						"registerFn": "openDockedPanel"
+					},
+					{
+						"id": "jlcAgentSymbolFloat",
+						"title": "以浮动窗口打开",
+						"registerFn": "openFloatingWindow"
+					},
+					{
+						"id": "jlcAgentSymbolDiag",
+						"title": "停靠诊断",
+						"registerFn": "dockDiagnose"
+					},
+					{
+						"id": "jlcAgentSymbolAbout",
+						"title": "关于...",
+						"registerFn": "about"
 					}
 				]
 			}
@@ -158,14 +188,19 @@
 						"registerFn": "openGlobalAgent"
 					},
 					{
+						"id": "jlcAgentPcbDock",
+						"title": "停靠 / 吸附到最右侧",
+						"registerFn": "openDockedPanel"
+					},
+					{
 						"id": "jlcAgentPcbFloat",
 						"title": "以浮动窗口打开",
 						"registerFn": "openFloatingWindow"
 					},
 					{
-						"id": "jlcAgentPcbDock",
-						"title": "停靠到右侧面板",
-						"registerFn": "openDockedPanel"
+						"id": "jlcAgentPcbDiag",
+						"title": "停靠诊断",
+						"registerFn": "dockDiagnose"
 					},
 					{
 						"id": "jlcAgentPcbAbout",
@@ -177,44 +212,127 @@
 		],
 		"footprint": [
 			{
-				"id": "jlcAgentFp",
+				"id": "jlcAgentFootprint",
 				"title": "AI 助手",
 				"menuItems": [
 					{
-						"id": "jlcAgentFpToggle",
+						"id": "jlcAgentFootprintToggle",
 						"title": "打开/收起 (Alt+A)",
 						"registerFn": "toggleSidebar"
 					},
 					{
-						"id": "jlcAgentFpGlobal",
+						"id": "jlcAgentFootprintProject",
+						"title": "工程 Agent",
+						"registerFn": "openProjectAgent"
+					},
+					{
+						"id": "jlcAgentFootprintGlobal",
 						"title": "独立 Agent",
 						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentFootprintDock",
+						"title": "停靠 / 吸附到最右侧",
+						"registerFn": "openDockedPanel"
+					},
+					{
+						"id": "jlcAgentFootprintFloat",
+						"title": "以浮动窗口打开",
+						"registerFn": "openFloatingWindow"
+					},
+					{
+						"id": "jlcAgentFootprintDiag",
+						"title": "停靠诊断",
+						"registerFn": "dockDiagnose"
+					},
+					{
+						"id": "jlcAgentFootprintAbout",
+						"title": "关于...",
+						"registerFn": "about"
 					}
 				]
 			}
 		],
 		"simulationSchematicSimulIDE": [
 			{
-				"id": "jlcAgentSim",
+				"id": "jlcAgentSimIde",
 				"title": "AI 助手",
 				"menuItems": [
 					{
-						"id": "jlcAgentSimToggle",
+						"id": "jlcAgentSimIdeToggle",
 						"title": "打开/收起 (Alt+A)",
 						"registerFn": "toggleSidebar"
 					},
 					{
-						"id": "jlcAgentSimProject",
+						"id": "jlcAgentSimIdeProject",
 						"title": "工程 Agent",
 						"registerFn": "openProjectAgent"
 					},
 					{
-						"id": "jlcAgentSimFloat",
+						"id": "jlcAgentSimIdeGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentSimIdeDock",
+						"title": "停靠 / 吸附到最右侧",
+						"registerFn": "openDockedPanel"
+					},
+					{
+						"id": "jlcAgentSimIdeFloat",
 						"title": "以浮动窗口打开",
 						"registerFn": "openFloatingWindow"
 					},
 					{
-						"id": "jlcAgentSimAbout",
+						"id": "jlcAgentSimIdeDiag",
+						"title": "停靠诊断",
+						"registerFn": "dockDiagnose"
+					},
+					{
+						"id": "jlcAgentSimIdeAbout",
+						"title": "关于...",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"simulationSchematicNgspice": [
+			{
+				"id": "jlcAgentSimSpice",
+				"title": "AI 助手",
+				"menuItems": [
+					{
+						"id": "jlcAgentSimSpiceToggle",
+						"title": "打开/收起 (Alt+A)",
+						"registerFn": "toggleSidebar"
+					},
+					{
+						"id": "jlcAgentSimSpiceProject",
+						"title": "工程 Agent",
+						"registerFn": "openProjectAgent"
+					},
+					{
+						"id": "jlcAgentSimSpiceGlobal",
+						"title": "独立 Agent",
+						"registerFn": "openGlobalAgent"
+					},
+					{
+						"id": "jlcAgentSimSpiceDock",
+						"title": "停靠 / 吸附到最右侧",
+						"registerFn": "openDockedPanel"
+					},
+					{
+						"id": "jlcAgentSimSpiceFloat",
+						"title": "以浮动窗口打开",
+						"registerFn": "openFloatingWindow"
+					},
+					{
+						"id": "jlcAgentSimSpiceDiag",
+						"title": "停靠诊断",
+						"registerFn": "dockDiagnose"
+					},
+					{
+						"id": "jlcAgentSimSpiceAbout",
 						"title": "关于...",
 						"registerFn": "about"
 					}

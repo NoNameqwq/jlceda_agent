@@ -1,18 +1,4 @@
 import type esbuild from 'esbuild';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
-/** `import x from './file?raw'`：以文本形式内联文件（用于内联 SimulIDE 引擎 JS） */
-const rawPlugin: esbuild.Plugin = {
-	name: 'raw-loader',
-	setup(build) {
-		build.onResolve({ filter: /\?raw$/ }, (args) => {
-			const realPath = args.path.replace(/\?raw$/, '');
-			return { path: path.isAbsolute(realPath) ? realPath : path.join(args.resolveDir, realPath), namespace: 'raw-file' };
-		});
-		build.onLoad({ filter: /.*/, namespace: 'raw-file' }, async args => ({ contents: await fs.readFile(args.path, 'utf8'), loader: 'text' }));
-	},
-};
 
 export default {
 	entryPoints: {
@@ -32,5 +18,4 @@ export default {
 	ignoreAnnotations: true,
 	define: {},
 	external: [],
-	plugins: [rawPlugin],
 } satisfies Parameters<(typeof esbuild)['build']>[0];

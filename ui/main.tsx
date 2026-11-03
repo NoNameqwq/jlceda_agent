@@ -4,12 +4,10 @@ import { workspace } from './agent/workspace';
 import { App } from './components/App';
 import { initStorage } from './lib/storage';
 import { registerEdaTools } from './tools/eda-tools';
-import { registerSimTools } from './tools/sim-tools';
 import 'katex/dist/katex.min.css';
 import './styles.css';
 
 registerEdaTools();
-registerSimTools();
 
 const root = document.getElementById('app')!;
 

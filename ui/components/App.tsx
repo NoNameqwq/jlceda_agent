@@ -7,14 +7,47 @@ import { changeStats } from '../agent/undo';
 import { workspace } from '../agent/workspace';
 import { getEda } from '../lib/eda';
 import { ApprovalCard, ChatView, QuestionCard } from './Chat';
-import { ConfirmHost, IconButton, Toasts } from './common';
+import { ConfirmHost, IconButton, notify, Toasts } from './common';
 import { Composer } from './Composer';
 import { useResolvedTheme, useSession, useWorkspace } from './hooks';
-import { IconCpu, IconDiff, IconHistory, IconLayers, IconMonitor, IconMoon, IconPanelClose, IconPlus, IconSettings, IconSparkle, IconSun, IconX, IconZap } from './icons';
+import { IconCpu, IconDiff, IconDockRight, IconFloatWin, IconHistory, IconLayers, IconMonitor, IconMoon, IconPanelClose, IconPlus, IconSettings, IconSparkle, IconSun, IconX, IconZap } from './icons';
 import { ChangesPanel, HistoryPanel } from './Panels';
 import { SettingsPanel } from './Settings';
 
 const PANEL_ID = 'jlc-agent-sidebar';
+
+/** 当前停靠方式（主线程广播 jlc-agent:dock-state） */
+function useDockMode(fallback: 'panel' | 'float'): 'panel' | 'float' {
+	const [mode, setMode] = useState<'panel' | 'float'>(fallback);
+	useEffect(() => {
+		const bus = getEda()?.sys_MessageBus;
+		let task: any;
+		try {
+			task = bus?.subscribe?.('jlc-agent:dock-state', (m: any) => {
+				if (m?.mode === 'panel' || m?.mode === 'float')
+					setMode(m.mode);
+			});
+			bus?.publish?.('jlc-agent:dock', { mode: 'query' });
+		}
+		catch {}
+		return () => {
+			try {
+				task?.cancel?.();
+			}
+			catch {}
+		};
+	}, []);
+	return mode;
+}
+
+/** 切换停靠：主线程关闭当前窗口并按新方式重开，对话已持久化，重开后自动恢复 */
+function requestDock(mode: 'panel' | 'float'): void {
+	workspace.flush();
+	try {
+		getEda()?.sys_MessageBus?.publish?.('jlc-agent:dock', { mode });
+	}
+	catch {}
+}
 
 function collapseSidebar(): void {
 	const eda = getEda();
@@ -185,6 +218,7 @@ export function App() {
 		ws.updateSettings({ theme: order[(order.indexOf(ws.settings.theme) + 1) % 3] });
 	};
 	const themeIcon = ws.settings.theme === 'system' ? <IconMonitor size={15} /> : ws.settings.theme === 'light' ? <IconSun size={15} /> : <IconMoon size={15} />;
+	const dock = useDockMode(ws.settings.dockMode);
 	const openSettings = (tab: typeof settingsTab = 'model') => {
 		setSettingsTab(tab);
 		setPanel('settings');
@@ -203,6 +237,19 @@ export function App() {
 					</IconButton>
 					<IconButton label={`主题：${ws.settings.theme === 'system' ? '跟随' : ws.settings.theme === 'light' ? '浅色' : '深色'}`} onClick={cycleTheme}>{themeIcon}</IconButton>
 					<IconButton label="设置" active={panel === 'settings'} onClick={() => (panel === 'settings' ? setPanel('') : openSettings())}><IconSettings size={15} /></IconButton>
+					<IconButton
+						label={dock === 'panel' ? '改为自由浮动窗口' : '停靠 / 吸附到最右侧'}
+						onClick={() => {
+							if (ws.anyRunning()) {
+								notify('Agent 正在运行，结束后再切换停靠方式', 'info');
+								return;
+							}
+							ws.updateSettings({ dockMode: dock === 'panel' ? 'float' : 'panel' });
+							requestDock(dock === 'panel' ? 'float' : 'panel');
+						}}
+					>
+						{dock === 'panel' ? <IconFloatWin size={15} /> : <IconDockRight size={15} />}
+					</IconButton>
 					<IconButton label="收起侧边栏（Alt+A）" onClick={collapseSidebar}><IconPanelClose size={15} /></IconButton>
 				</div>
 			</header>

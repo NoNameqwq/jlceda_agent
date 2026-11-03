@@ -25,12 +25,11 @@ export function defaultSettings(): Settings {
 		maxToolRounds: 40,
 		transport: 'auto',
 		streaming: true,
-		dockMode: 'float',
+		dockMode: 'panel',
 		uiScale: 1,
 		scope: 'project',
 		autoOpenOnProject: true,
 		showReasoning: true,
-		simEngineMode: 'takeover',
 		customInstructions: '',
 		sendKey: 'enter',
 	};
@@ -62,6 +61,11 @@ export async function loadSettings(): Promise<Settings> {
 			ov.thinking = (ov.reasoningEffort === 'medium' ? 'high' : ov.reasoningEffort) as any;
 		delete ov.reasoningEffort;
 		merged.overrides[k] = ov;
+	}
+	// 迁移：v2 起默认停靠到最右侧边栏
+	if ((s as any).dockVersion !== 2) {
+		merged.dockMode = 'panel';
+		(merged as any).dockVersion = 2;
 	}
 	merged.uiScale = Math.min(1.6, Math.max(0.7, Number(merged.uiScale) || 1));
 	if (merged.scope !== 'global')

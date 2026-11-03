@@ -55,7 +55,6 @@ export class Workspace {
 			this.settings = { ...this.settings, scope: pending };
 		setEdaConfig('dockMode', this.settings.dockMode);
 		setEdaConfig('autoOpenOnProject', this.settings.autoOpenOnProject);
-		setEdaConfig('simEngineMode', this.settings.simEngineMode);
 		this.editor = await readEditorContext();
 		await this.switchProject(this.keyFor(this.editor));
 		this.ready = true;
@@ -289,8 +288,6 @@ export class Workspace {
 			setTransport(patch.transport);
 		if (patch.dockMode)
 			setEdaConfig('dockMode', patch.dockMode);
-		if (patch.simEngineMode)
-			setEdaConfig('simEngineMode', patch.simEngineMode);
 		if (patch.autoOpenOnProject !== undefined)
 			setEdaConfig('autoOpenOnProject', patch.autoOpenOnProject);
 		if (patch.scope) {

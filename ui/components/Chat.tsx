@@ -31,11 +31,8 @@ type Theme = 'light' | 'dark';
 // ———————————————————— 思考过程 ————————————————————
 
 function Reasoning(props: { text: string; streaming: boolean; theme: Theme }) {
-	const [open, setOpen] = useState(props.streaming);
-	useEffect(() => {
-		if (!props.streaming)
-			setOpen(false);
-	}, [props.streaming]);
+	// 默认收起，只显示「深度思考中 / 思考过程」一行，需要时点开
+	const [open, setOpen] = useState(false);
 	return (
 		<div class={`reasoning ${open ? 'open' : ''}`}>
 			<button type="button" class="reasoning-head" onClick={() => setOpen(!open)}>
@@ -112,6 +109,7 @@ function ToolCard(props: { run: ToolRun; theme: Theme; onUndo?: (changeId: strin
 				<span class="tool-status"><StatusIcon run={r} /></span>
 				<span class="tool-title">{r.title}</span>
 				{r.summary && <span class="tool-summary">{r.summary}</span>}
+				{display?.kind === 'image' && !open && <span class="tool-img-tag">截图</span>}
 				<span class="tool-meta">
 					{r.risk !== 'read' && <span class={`risk-tag ${r.risk}`}>{RISK_LABEL[r.risk]}</span>}
 					{r.status !== 'done' && <span class="tool-state">{STATUS_TEXT[r.status]}</span>}
@@ -119,13 +117,13 @@ function ToolCard(props: { run: ToolRun; theme: Theme; onUndo?: (changeId: strin
 				</span>
 				<IconChevronRight size={12} class="chev" />
 			</button>
-			{display?.kind === 'image' && (
-				<div class="tool-image">
-					<img src={display.src} alt={display.caption ?? ''} loading="lazy" onClick={() => openImage(display.src)} />
-				</div>
-			)}
 			<div class={`collapse ${open ? 'open' : ''}`}><div class="collapse-inner">
 				<div class="tool-body">
+					{display?.kind === 'image' && open && (
+						<div class="tool-image">
+							<img src={display.src} alt={display.caption ?? ''} loading="lazy" onClick={() => openImage(display.src)} />
+						</div>
+					)}
 					<div class="tool-sec">
 						<div class="tool-label">参数<span class="tool-name">{r.name}</span></div>
 						<pre class="tool-pre">{typeof r.args === 'string' ? r.args : safeStringify(r.args, 2)}</pre>

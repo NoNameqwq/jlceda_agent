@@ -37,10 +37,6 @@ function mountPreviews(root: HTMLElement, theme: 'light' | 'dark', streaming: bo
 			return;
 		el.dataset.mounted = key;
 		el.innerHTML = '';
-		const bar = document.createElement('div');
-		bar.className = 'preview-bar';
-		bar.innerHTML = `<span class="preview-tag">${el.dataset.lang === 'svg' ? 'SVG' : 'HTML'} 预览</span><span class="preview-actions"><button type="button" data-act="code">源码</button><button type="button" data-act="copy">复制</button></span>`;
-		el.appendChild(bar);
 		if (streaming) {
 			const ph = document.createElement('div');
 			ph.className = 'preview-loading';
@@ -57,22 +53,6 @@ function mountPreviews(root: HTMLElement, theme: 'light' | 'dark', streaming: bo
 		frame.style.height = `${heights.get(frame.dataset.key) ?? 220}px`;
 		frame.srcdoc = buildPreviewDoc(code, theme);
 		el.appendChild(frame);
-		const pre = document.createElement('pre');
-		pre.className = 'preview-code';
-		pre.textContent = code;
-		pre.hidden = true;
-		el.appendChild(pre);
-		bar.addEventListener('click', (ev) => {
-			const act = (ev.target as HTMLElement).closest('button')?.dataset.act;
-			if (act === 'copy') {
-				void copyText(code).then(() => notify('已复制 HTML'));
-			}
-			else if (act === 'code') {
-				pre.hidden = !pre.hidden;
-				frame.hidden = !pre.hidden;
-				(ev.target as HTMLElement).textContent = pre.hidden ? '源码' : '预览';
-			}
-		});
 	});
 }
 

@@ -6,6 +6,7 @@ import type { Workspace } from '../agent/workspace';
 import { useMemo, useState } from 'preact/hooks';
 import { MODE_DESC, MODE_LABEL, RISK_LABEL } from '../agent/permissions';
 import { DEEPSEEK_BASE_URL, inferCapabilities, overrideKey, resolveModel, testConnection } from '../agent/providers';
+import { getEda } from '../lib/eda';
 import { storageBackend } from '../lib/storage';
 import { errorMessage, formatTokens, uid } from '../lib/util';
 import { allTools, GROUP_LABEL, toolRisk } from '../tools/registry';
@@ -398,10 +399,10 @@ function GeneralTab(props: { ws: Workspace }) {
 					))}
 				</div>
 			</Field>
-			<Field label="停靠方式" hint="下次打开侧边栏时生效。若当前 EDA 版本不支持面板停靠，会自动使用浮动窗口。">
+			<Field label="停靠方式" hint="最右侧：EDA 支持停靠接口时作为标签页与「属性 / 过滤」并列；不支持的版本（如 4.1.60）改为吸附在窗口最右侧、占满高度。浮动窗口：可自由拖动。">
 				<div class="seg">
-					<button type="button" class={st.dockMode === 'panel' ? 'on' : ''} onClick={() => ws.updateSettings({ dockMode: 'panel' })}>右侧面板</button>
-					<button type="button" class={st.dockMode === 'float' ? 'on' : ''} onClick={() => ws.updateSettings({ dockMode: 'float' })}>浮动窗口</button>
+					<button type="button" class={st.dockMode === 'panel' ? 'on' : ''} onClick={() => switchDock(ws, 'panel')}>停靠 / 吸附右侧</button>
+					<button type="button" class={st.dockMode === 'float' ? 'on' : ''} onClick={() => switchDock(ws, 'float')}>浮动窗口</button>
 				</div>
 			</Field>
 			<Field label="发送快捷键">
@@ -423,17 +424,6 @@ function GeneralTab(props: { ws: Workspace }) {
 						{ value: 'auto', label: '自动', desc: '优先 EDA 外部请求，失败回退 fetch' },
 						{ value: 'eda', label: 'EDA 外部请求', desc: 'eda.sys_ClientUrl.request' },
 						{ value: 'fetch', label: '浏览器 fetch', desc: '适合本地模型 / 支持 CORS 的接口' },
-					]}
-				/>
-			</Field>
-			<Field label="SimulIDE 仿真引擎" hint="接管：由本扩展运行仿真，支持 Agent 自建元件；若同时安装了官方 SimulIDE 扩展，请在扩展管理器中停用它，避免两个引擎同时响应。仅观察：只记录网表供 Agent 分析。修改后需重启 EDA 生效">
-				<Select
-					value={st.simEngineMode}
-					onChange={v => ws.updateSettings({ simEngineMode: v })}
-					options={[
-						{ value: 'takeover', label: '接管仿真', desc: '本扩展运行引擎，支持自定义元件' },
-						{ value: 'observe', label: '仅观察', desc: '官方扩展运行仿真，本扩展只读取网表' },
-						{ value: 'off', label: '关闭', desc: '不参与仿真' },
 					]}
 				/>
 			</Field>
@@ -469,6 +459,18 @@ function GeneralTab(props: { ws: Workspace }) {
 			</div>
 		</div>
 	);
+}
+
+/** 切换停靠方式并立即生效（运行中不重开，下次打开时生效） */
+function switchDock(ws: Workspace, mode: 'panel' | 'float'): void {
+	ws.updateSettings({ dockMode: mode });
+	if (ws.anyRunning())
+		return;
+	ws.flush();
+	try {
+		getEda()?.sys_MessageBus?.publish?.('jlc-agent:dock', { mode });
+	}
+	catch {}
 }
 
 export function SettingsPanel(props: { open: boolean; onClose: () => void; ws: Workspace; tab?: Tab }) {

@@ -192,8 +192,6 @@ export interface Settings {
 	/** 打开工程文档时自动唤出工程 Agent */
 	autoOpenOnProject: boolean;
 	showReasoning: boolean;
-	/** SimulIDE 引擎模式（主线程读取扩展配置 simEngineMode） */
-	simEngineMode: 'takeover' | 'observe' | 'off';
 	customInstructions: string;
 	sendKey: 'enter' | 'ctrlEnter';
 }
